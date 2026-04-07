@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Doctor Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <h2>👨‍⚕️ Doctor Dashboard</h2>
+        <a href="/logout" class="btn logout-btn">Logout</a>
+    </div>
+
+    <!-- Card -->
+    <div class="card">
+
+        <table>
+            <tr>
+                <th>Patient</th>
+                <th>Problem</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Prescription</th>
+                <th>Action</th>
+            </tr>
+
+            {% for row in data %}
+            <tr>
+                <td>{{ row.name }}</td>
+                <td>{{ row.problem }}</td>
+                <td>{{ row.time }}</td>
+
+                <!-- Status Badge -->
+                <td>
+                    <span class="status {{ row.status }}">
+                        {{ row.status }}
+                    </span>
+                </td>
+
+                <!-- Show Prescription -->
+                <td>
+                    {% if row.prescription %}
+                        {{ row.prescription }}
+                    {% else %}
+                        <i>Not added</i>
+                    {% endif %}
+                </td>
+
+                <!-- Actions -->
+                <td>
+                    {% if row.status == 'pending' %}
+                        <a href="/approve/{{ row.id }}" class="btn approve-btn">Approve</a>
+                    {% endif %}
+
+                    {% if row.status == 'approved' %}
+                    <form action="/prescription/{{ row.id }}" method="POST">
+                        <input type="text" name="prescription" 
+                               class="prescription-input" 
+                               placeholder="Write prescription">
+                        <button class="btn">Send</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+
+        </table>
+
+    </div>
+
+</div>
+
+</body>
+</html>

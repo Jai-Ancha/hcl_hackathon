@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hospital System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+    <div class="logo">🏥 MediCare</div>
+
+    <div class="nav-links">
+    <a href="#home">Home</a>
+    <a href="#about">About</a>
+
+    <div class="dropdown">
+        <a href="#departments">Departments ▾</a>
+        <div class="dropdown-content">
+            <a href="#">Cardiology</a>
+            <a href="#">Dermatology</a>
+            <a href="#">Neurology</a>
+            <a href="#">Orthopedics</a>
+        </div>
+    </div>
+
+    <a href="#contact">Contact</a>
+
+    <!-- NEW -->
+    <a href="/doctor_login">Doctor Login</a>
+</div>
+
+    <div>
+        <a href="#doctor-login" class="btn">Doctor Login</a>
+        <a href="/add_patient" class="btn nav-btn">Book Appointment</a>
+    </div>
+</div>
+
+<!-- HERO -->
+<section id="home" class="hero">
+    <div class="hero-text">
+        <h1>We are here for you <br><span>ALWAYS & IN ALL WAYS</span></h1>
+        <p>Providing quality healthcare with modern technology and expert doctors.</p>
+        <a href="/add_patient" class="btn hero-btn">Book Appointment</a>
+    </div>
+
+    <div class="hero-cards">
+        <div class="info-card">
+            <h3>👨‍⚕️ 50+ Doctors</h3>
+            <p>Experienced specialists</p>
+        </div>
+        <div class="info-card">
+            <h3>🏥 10+ Departments</h3>
+            <p>Advanced care</p>
+        </div>
+        <div class="info-card">
+            <h3>⏱ 24/7 Service</h3>
+            <p>Emergency support</p>
+        </div>
+        <div class="info-card">
+            <h3>💊 Modern Care</h3>
+            <p>Latest treatment</p>
+        </div>
+    </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="section">
+    <h2>About Us</h2>
+    <p class="section-text">
+        MediCare Hospital provides high-quality healthcare with experienced doctors 
+        and modern medical facilities.
+    </p>
+</section>
+
+<!-- DEPARTMENTS -->
+<section id="departments" class="section gray">
+    <h2>Our Departments</h2>
+    <div class="grid">
+        <div class="card">❤️ Cardiology</div>
+        <div class="card">🧴 Dermatology</div>
+        <div class="card">🧠 Neurology</div>
+        <div class="card">🦴 Orthopedics</div>
+    </div>
+</section>
+
+<!-- 🔐 DOCTOR LOGIN SECTION -->
+<section id="doctor-login" class="section">
+    <h2>Doctor Login</h2>
+
+    <div class="login-card">
+        <form action="/doctor_login" method="GET">
+            <button class="btn full-btn">Go to Doctor Login</button>
+        </form>
+    </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="footer">
+    <h3>Contact Us</h3>
+    <p>Email: medicare@gmail.com | Phone: +91 9876543210</p>
+</section>
+
+</body>
+</html>
