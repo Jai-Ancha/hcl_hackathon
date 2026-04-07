@@ -1,162 +1,246 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
-from datetime import datetime
-import database
+from flask import Flask, render_template, request, redirect, session
+import sqlite3
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_hackathon_key'
+app.secret_key = "secret123"
 
-@app.route('/')
-def home():
-    return render_template('home.html')
+# ---------------- DB ----------------
+def get_db():
+    conn = sqlite3.connect("hospital.db")
+    conn.row_factory = sqlite3.Row
+    return conn
 
-@app.route('/book_appointment', methods=['GET', 'POST'])
-def book_appointment_public():
-    doctors = database.get_doctors()
-    
-    if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        password = 'patient_default' # Simple placeholder for unauthenticated
-        age = request.form['age']
-        gender = request.form['gender']
-        phone = request.form['phone']
-        address = request.form['address']
-        
-        doctor_id = request.form['doctor']
-        appt_date = request.form['appointment_date']
-        appt_time = request.form['appointment_time']
-        
-        try:
-            patient_id = database.create_patient(name, email, password, age, gender, phone, address)
-            success, msg = database.book_appointment(
-                patient_id, doctor_id, None, appt_date, appt_time
+# ---------------- CREATE TABLES ----------------
+def create_tables():
+    conn = get_db()
+
+    conn.execute('''
+    CREATE TABLE IF NOT EXISTS doctors (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        specialization TEXT,
+        username TEXT,
+        password TEXT
+    )
+    ''')
+
+    conn.execute('''
+    CREATE TABLE IF NOT EXISTS patients (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        age INTEGER,
+        problem TEXT
+    )
+    ''')
+
+    conn.execute('''
+    CREATE TABLE IF NOT EXISTS appointments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        patient_id INTEGER,
+        doctor_id INTEGER,
+        time TEXT,
+        status TEXT DEFAULT 'pending',
+        prescription TEXT
+    )
+    ''')
+
+    conn.commit()
+    conn.close()
+
+create_tables()
+
+# ---------------- INSERT DOCTORS (RUN ONCE) ----------------
+def insert_doctors():
+    conn = get_db()
+
+    existing = conn.execute("SELECT COUNT(*) as count FROM doctors").fetchone()
+
+    if existing["count"] == 0:
+
+        # ---------------- CARDIOLOGY ----------------
+        cardiology = [
+            ("Dr. Raj", "Cardiology", "raj", "123"),
+            ("Dr. Meena", "Cardiology", "meena", "123"),
+            ("Dr. Arjun", "Cardiology", "arjun", "123"),
+            ("Dr. Kavya", "Cardiology", "kavya", "123"),
+            ("Dr. Ramesh", "Cardiology", "ramesh", "123"),
+            ("Dr. Sneha", "Cardiology", "sneha", "123"),
+            ("Dr. Vikram", "Cardiology", "vikram", "123")
+        ]
+
+        # ---------------- DERMATOLOGY ----------------
+        dermatology = [
+            ("Dr. Priya", "Dermatology", "priya", "123"),
+            ("Dr. Rahul", "Dermatology", "rahul", "123"),
+            ("Dr. Neha", "Dermatology", "neha", "123"),
+            ("Dr. Kiran", "Dermatology", "kiran", "123"),
+            ("Dr. Anjali", "Dermatology", "anjali", "123"),
+            ("Dr. Mohan", "Dermatology", "mohan", "123"),
+            ("Dr. Divya", "Dermatology", "divya", "123")
+        ]
+
+        # ---------------- NEUROLOGY ----------------
+        neurology = [
+            ("Dr. Suresh", "Neurology", "suresh", "123"),
+            ("Dr. Anil", "Neurology", "anil", "123"),
+            ("Dr. Pooja", "Neurology", "pooja", "123"),
+            ("Dr. Deepak", "Neurology", "deepak", "123"),
+            ("Dr. Swathi", "Neurology", "swathi", "123"),
+            ("Dr. Naveen", "Neurology", "naveen", "123"),
+            ("Dr. Lakshmi", "Neurology", "lakshmi", "123")
+        ]
+
+        # ---------------- ORTHOPEDICS ----------------
+        orthopedics = [
+            ("Dr. Reddy", "Orthopedics", "reddy", "123"),
+            ("Dr. Mahesh", "Orthopedics", "mahesh", "123"),
+            ("Dr. Teja", "Orthopedics", "teja", "123"),
+            ("Dr. Harish", "Orthopedics", "harish", "123"),
+            ("Dr. Keerthi", "Orthopedics", "keerthi", "123"),
+            ("Dr. Vinay", "Orthopedics", "vinay", "123"),
+            ("Dr. Srikanth", "Orthopedics", "srikanth", "123")
+        ]
+
+        # Insert all doctors
+        for d in cardiology + dermatology + neurology + orthopedics:
+            conn.execute(
+                "INSERT INTO doctors (name, specialization, username, password) VALUES (?, ?, ?, ?)", d
             )
-            
-            if success:
-                flash(f"Appointment booked successfully for {name}!", "success")
-                return redirect(url_for('home'))
-            else:
-                flash(f"Booking failed: {msg}", "error")
-        except Exception as e:
-            flash(f"Error booking appointment: {str(e)}", "error")
-            
-    return render_template('book_appointment.html', doctors=doctors)
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        
-        user = database.get_user_by_email(email)
-        
-        if user and user['password'] == password:
-            session['user_id'] = user['id']
-            session['user_role'] = user['role']
-            session['user_name'] = user['name']
-            
-            if user['role'] == 'receptionist':
-                rec = database.get_receptionist_by_user_id(user['id'])
-                if rec:
-                    session['reception_id'] = rec['id']
-                return redirect(url_for('receptionist_dashboard'))
-            elif user['role'] == 'doctor':
-                doc = database.get_doctor_by_user_id(user['id'])
-                if doc:
-                    session['doctor_id'] = doc['id']
-                return redirect(url_for('doctor_dashboard'))
-            else:
-                flash("Role not supported yet.", "error")
+        conn.commit()
+
+    conn.close()
+
+insert_doctors()
+
+# ---------------- HOME ----------------
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+# ---------------- ADD PATIENT ----------------
+@app.route("/add_patient", methods=["GET", "POST"])
+def add_patient():
+    conn = get_db()
+
+    specialization = request.args.get("specialization")
+
+    if specialization:
+        doctors = conn.execute(
+            "SELECT * FROM doctors WHERE specialization=?",
+            (specialization,)
+        ).fetchall()
+    else:
+        doctors = []
+
+    if request.method == "POST":
+        name = request.form["name"]
+        age = request.form["age"]
+        problem = request.form["problem"]
+        doctor_id = request.form["doctor"]
+        time = request.form["time"]
+
+        cur = conn.cursor()
+
+        # Insert patient
+        cur.execute(
+            "INSERT INTO patients (name, age, problem) VALUES (?, ?, ?)",
+            (name, age, problem)
+        )
+        patient_id = cur.lastrowid
+
+        # Check slot conflict
+        existing = conn.execute(
+            "SELECT * FROM appointments WHERE doctor_id=? AND time=?",
+            (doctor_id, time)
+        ).fetchone()
+
+        if existing:
+            return "❌ Slot already booked!"
+
+        # Insert appointment
+        conn.execute(
+            "INSERT INTO appointments (patient_id, doctor_id, time) VALUES (?, ?, ?)",
+            (patient_id, doctor_id, time)
+        )
+
+        conn.commit()
+        conn.close()
+        return redirect("/")
+
+    conn.close()
+    return render_template("add_patient.html", doctors=doctors)
+
+# ---------------- DOCTOR LOGIN ----------------
+@app.route("/doctor_login", methods=["GET", "POST"])
+def doctor_login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+
+        conn = get_db()
+        doctor = conn.execute(
+            "SELECT * FROM doctors WHERE username=? AND password=?",
+            (username, password)
+        ).fetchone()
+
+        if doctor:
+            session["doctor_id"] = doctor["id"]
+            return redirect("/doctor_dashboard")
         else:
-            flash("Invalid email or password", "error")
-            
-    return render_template('login.html')
+            return "❌ Invalid credentials"
 
-@app.route('/logout')
+    return render_template("doctor_login.html")
+
+# ---------------- DOCTOR DASHBOARD ----------------
+@app.route("/doctor_dashboard")
+def doctor_dashboard():
+    if "doctor_id" not in session:
+        return redirect("/doctor_login")
+
+    doctor_id = session["doctor_id"]
+    conn = get_db()
+
+    data = conn.execute('''
+        SELECT a.id, p.name, p.problem, a.time, a.status, a.prescription
+        FROM appointments a
+        JOIN patients p ON a.patient_id = p.id
+        WHERE a.doctor_id = ?
+    ''', (doctor_id,)).fetchall()
+
+    conn.close()
+    return render_template("doctor_dashboard.html", data=data)
+
+# ---------------- APPROVE ----------------
+@app.route("/approve/<int:id>")
+def approve(id):
+    conn = get_db()
+    conn.execute("UPDATE appointments SET status='approved' WHERE id=?", (id,))
+    conn.commit()
+    conn.close()
+    return redirect("/doctor_dashboard")
+
+# ---------------- PRESCRIPTION ----------------
+@app.route("/prescription/<int:id>", methods=["POST"])
+def prescription(id):
+    text = request.form["prescription"]
+
+    conn = get_db()
+    conn.execute(
+        "UPDATE appointments SET prescription=? WHERE id=?",
+        (text, id)
+    )
+    conn.commit()
+    conn.close()
+
+    return redirect("/doctor_dashboard")
+
+# ---------------- LOGOUT ----------------
+@app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for('login'))
+    return redirect("/")
 
-@app.route('/receptionist', methods=['GET', 'POST'])
-def receptionist_dashboard():
-    if 'user_id' not in session or session['user_role'] != 'receptionist':
-        return redirect(url_for('login'))
-        
-    doctors = database.get_doctors()
-    
-    if request.method == 'POST':
-        # Handles submitting the admit and book form
-        action = request.form.get('action')
-        
-        if action == 'admit_and_book':
-            # Patient details
-            name = request.form['name']
-            email = request.form['email']
-            password = 'password123' # Default for demonstration
-            age = request.form['age']
-            gender = request.form['gender']
-            phone = request.form['phone']
-            address = request.form['address']
-            
-            # Appointment details
-            doctor_id = request.form['doctor']
-            appt_date = request.form['appointment_date']
-            appt_time = request.form['appointment_time']
-            
-            try:
-                # 1. Admit patient
-                patient_id = database.create_patient(name, email, password, age, gender, phone, address)
-                
-                # 2. Book appointment with validation
-                success, msg = database.book_appointment(
-                    patient_id, doctor_id, session.get('reception_id'), appt_date, appt_time
-                )
-                
-                if success:
-                    flash(f"Patient {name} admitted and appointment booked successfully!", "success")
-                else:
-                    flash(f"Error booking appointment for {name}: {msg}", "error")
-            except Exception as e:
-                flash(f"Error admitting patient: {str(e)}", "error")
-                
-        return redirect(url_for('receptionist_dashboard'))
-        
-    return render_template('receptionist.html', doctors=doctors)
-
-@app.route('/doctor', methods=['GET'])
-def doctor_dashboard():
-    if 'user_id' not in session or session['user_role'] != 'doctor':
-        return redirect(url_for('login'))
-        
-    doctor_id = session.get('doctor_id')
-    today_date = datetime.now().strftime('%Y-%m-%d')
-    appointments = database.get_appointments_for_doctor(doctor_id, today_date)
-    
-    return render_template('doctor.html', appointments=appointments, today=today_date)
-
-@app.route('/prescription/<int:appointment_id>', methods=['GET', 'POST'])
-def prescription(appointment_id):
-    if 'user_id' not in session or session['user_role'] != 'doctor':
-        return redirect(url_for('login'))
-        
-    appt = database.get_appointment_details(appointment_id)
-    if not appt:
-        flash("Appointment not found.", "error")
-        return redirect(url_for('doctor_dashboard'))
-        
-    if request.method == 'POST':
-        diagnosis = request.form['diagnosis']
-        medicines = request.form['medicines']
-        notes = request.form['notes']
-        
-        success = database.update_prescription(appointment_id, diagnosis, medicines, notes)
-        if success:
-            flash("Prescription updated successfully. Status changed to completed.", "success")
-            return redirect(url_for('doctor_dashboard'))
-        else:
-            flash("Failed to update prescription.", "error")
-            
-    return render_template('prescription.html', appt=appt)
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+# ---------------- RUN ----------------
+if __name__ == "__main__":
+    app.run(debug=True)
